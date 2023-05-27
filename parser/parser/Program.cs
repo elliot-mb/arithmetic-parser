@@ -32,7 +32,7 @@ namespace parser
 
             Parser p = new Parser(operators);
 
-            p.Parse("0.9 + 1 - 2");
+            Program.WriteLine("out: " + p.Parse(args[0]).ToString());
         }
     }
 }
