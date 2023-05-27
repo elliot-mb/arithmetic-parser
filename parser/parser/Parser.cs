@@ -41,6 +41,8 @@ namespace parser
         private string Preprocess(string raw)
         {
             string noWhiteSpace = "";
+
+            /*
             string bracketed = raw;
 
             //for adding binding strength brackets
@@ -94,16 +96,16 @@ namespace parser
                 bracketed = B_OPEN + bracketed;
 
             bracketed = B_OPEN + bracketed + B_CLOSE;
-
+            */
             // remove whitespace and check all characters in our syntax
-            for(int i = 0; i < bracketed.Length; i++)
+            for(int i = 0; i < raw.Length; i++)
             {
-                char c = bracketed[i];
+                char c = raw[i];
                 if (c != ' ')
                 {
                     if (!IsValidChar(c))
                     {
-                        throw new Exception("There are illegal character(s) including '"+c+"' in the expression '" + bracketed + ".");
+                        throw new Exception("There are illegal character(s) including '"+c+"' in the expression '" + raw + "'.");
                     }
                     noWhiteSpace += c;
                 }
@@ -114,60 +116,27 @@ namespace parser
             return noWhiteSpace;
         }
 
-        //extracts a bracket-enclosed sub-expression
-        //if there are no sub-expressions, we return the empty string 
-        private string TakeSubStmt(string stmt, out int endLoc) //by-ref we find where the substatement ends (index of final closing bracket)
+        private int FindWeakOp(string stmt) //if they are all the same we left-associate 
         {
-            endLoc = SUB_STMT_NOT_FOUND;
-            int bracketTally = 0;
-            bool isClosing = false;
-            string subExp = "";
+            int result = OP_NOT_FOUND;
+            int bracketDepth = 0;
+            int weakest = int.MaxValue;
             for(int i = 0; i < stmt.Length; i++)
             {
                 char c = stmt[i];
-                if (c == B_CLOSE) bracketTally--;
-                if (bracketTally > 0)
-                {
-                    isClosing = true;
-                    subExp += c;
-                }
-                if (c == B_OPEN) bracketTally++;
-                if (bracketTally == 0 && isClosing)
-                {
-                    endLoc = i; 
-                    break;
-                }
-            }
+                if (c == B_OPEN)
+                    bracketDepth++;
+                if (c == B_CLOSE)
+                    bracketDepth--;
 
-            if (bracketTally != 0) throw new Exception("Sub statement(s) of statement '" + stmt + "' are not well formed (bad brackets)");
-
-            return subExp;
-        }
-
-        private bool HasSubStmt(string stmt)
-        {
-            int _;
-            return !(TakeSubStmt(stmt, out _) == "");
-        }
-
-        private int FindFirstOp(string stmt)
-        {
-            int result = OP_NOT_FOUND;
-            IOperator weakest = null;
-            for(int i = 0; i < stmt.Length; i++)
-            {
                 //Program.WriteLine(j + "" + stmt);
-                if (opLookup.ContainsKey(stmt[i]))
+                if (opLookup.ContainsKey(c))
                 {
-                    IOperator op = opLookup[stmt[i]];
-                    if(weakest == null)
+                    IOperator op = opLookup[c];
+                    int s = op.Strength() + (bracketDepth * Operators.MAX_OP_STRENGTH);
+                    if (s < weakest)
                     {
-                        weakest = op;
-                        result = i;
-                    }
-                    else if(op.Strength() < weakest.Strength())
-                    {
-                        weakest = op;
+                        weakest = s;
                         result = i;
                     }
                 }
@@ -191,11 +160,11 @@ namespace parser
         //evaluates statment stmt
         private double Eval(string stmt)
         {
-            Program.WriteLine(stmt);
+            Program.WriteLine("stmt: "+stmt);
             if (stmt.Length == 0) throw new Exception("Cannot evaluate empty statements");
 
-            int firstOp = FindFirstOp(stmt);
-            if (firstOp == OP_NOT_FOUND)
+            int weakOp = FindWeakOp(stmt);
+            if (weakOp == OP_NOT_FOUND)
             {
                 string literal = LITERAL.Match(stmt).Value;
                 //Program.WriteLine("LITERAL" + literal);
@@ -206,28 +175,9 @@ namespace parser
             }
             
             string stmt1, stmt2;
-            SplitStmt(stmt, firstOp, out stmt1, out stmt2);
-            IOperator op = opLookup[stmt[firstOp]]; //what we apply to the results of the two statements 
-
-            int subStmtEnd = 0; //if this value is the same as the length of the substatement, it is at the start of stmt 
-            string subStmt = TakeSubStmt(stmt, out subStmtEnd);
-            if (subStmtEnd != SUB_STMT_NOT_FOUND)
-            {
-                //absolute index in the whole statement of the operator after the substatement 
-                int firstOpAfterSubStmt = subStmtEnd + FindFirstOp(stmt.Substring(subStmtEnd));
-
-                //Program.WriteLine(subStmt + ";" + stmt1 + ";" + stmt2 + ";" + subStmtEnd + ";" + stmt[firstOpAfterSubStmt]);
-
-                //is this of the form stmt = (stmt')
-                if (stmt.Length == subStmt.Length + B_WRAPPED) return Eval(subStmt);
-                //is this of the form stmt = (stmt') <op> stmt''
-                if (subStmtEnd + 1 == subStmt.Length + B_WRAPPED)
-                {
-                    string stmt4 = stmt.Substring(firstOpAfterSubStmt + 1);
-                    IOperator newOp = opLookup[stmt[firstOpAfterSubStmt]];
-                    return newOp.Do(Eval(stmt4), Eval(subStmt));
-                }
-            }
+            SplitStmt(stmt, weakOp, out stmt1, out stmt2);
+            IOperator op = opLookup[stmt[weakOp]]; //what we apply to the results of the two statements 
+            Program.WriteLine("split: " + stmt1 + "; " + stmt2);
 
             //left-associate statements (there are no brackets)
             return op.Do(Eval(stmt2), Eval(stmt1));
