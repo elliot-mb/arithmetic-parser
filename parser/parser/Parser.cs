@@ -93,8 +93,6 @@ namespace parser
                         result = i;
                     }
                 }
-
-                Program.WriteLine("" + c);
             }
 
             return result;

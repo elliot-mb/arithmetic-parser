@@ -29,6 +29,7 @@ namespace parser
             operators.Add(new Operators.Mul());
             operators.Add(new Operators.Sub());
             operators.Add(new Operators.Div());
+            operators.Add(new Operators.Pow());
 
             Parser p = new Parser(operators);
 
