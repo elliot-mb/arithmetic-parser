@@ -68,7 +68,7 @@ namespace parser
             for(int i = 1; i < noWhiteSpace.Length; i++)
             {
                 string cc = "" + noWhiteSpace[i - 1] + noWhiteSpace[i];
-                if((cc[1] == '-' || cc[1] == '+') && ((int) cc[0] < ASCII_ZERO || (int) cc[0] > ASCII_ZERO + 9))
+                if((cc[1] == '-' || cc[1] == '+') && ((int) cc[0] < ASCII_ZERO || (int) cc[0] > ASCII_ZERO + 9) && (cc[0] != ')'))
                 {
                     noWhiteSpace = noWhiteSpace.Insert(i, "0");
                     i++; //our string is longer so we need to keep i relative to this 
