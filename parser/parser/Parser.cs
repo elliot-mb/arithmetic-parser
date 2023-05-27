@@ -39,18 +39,29 @@ namespace parser
         private string Preprocess(string raw)
         {
             string noWhiteSpace = "";
+            int bracketDepth = 0;
             // remove whitespace and check all characters in our syntax
-            for(int i = 0; i < raw.Length; i++)
+            for (int i = 0; i < raw.Length; i++)
             {
-                char c = raw[i];
+                char c = raw[i];                 
+                if (c == B_OPEN)
+                    bracketDepth++;
+                if (c == B_CLOSE)
+                    bracketDepth--;
+
                 if (c != ' ')
                 {
                     if (!IsValidChar(c))
                     {
-                        throw new Exception("There are illegal character(s) including '"+c+"' in the expression '" + raw + "'.");
+                        throw new Exception("Expression appears to contain illegal character(s) including '"+c+"' in the expression '" + raw + "'.");
                     }
                     noWhiteSpace += c;
                 }
+            }
+
+            if(bracketDepth != 0)
+            {
+                throw new Exception("Expression appears to contain orphaned brackets, please ensure your expression is well-formed.");
             }
 
             Program.WriteLine("preprocessed: " + noWhiteSpace);
@@ -82,6 +93,8 @@ namespace parser
                         result = i;
                     }
                 }
+
+                Program.WriteLine("" + c);
             }
 
             return result;
@@ -111,15 +124,15 @@ namespace parser
                 //Program.WriteLine("LITERAL" + literal);
                 double val;
                 bool parseSucceeds = Double.TryParse(literal, out val); //pass-by-ref
-                if (!parseSucceeds) throw new Exception("Could not evaluate double literal '" + stmt + "' or '" + literal + "', it may be incorrectly formatted.");
+                if (!parseSucceeds) throw new Exception("Cannot evaluate double literal '" + stmt + "' or '" + literal + "', it may be incorrectly formatted.");
                 return val;
             }
             
             string stmt1, stmt2;
             SplitStmt(stmt, weakOp, out stmt1, out stmt2);
             IOperator op = opLookup[stmt[weakOp]]; //what we apply to the results of the two statements 
-            Program.WriteLine("stmt : " + stmt);
-            Program.WriteLine("split: " + "^".PadLeft(weakOp + 1));
+            Program.WriteLine(stmt);
+            Program.WriteLine("^".PadLeft(weakOp + 1));
 
             return op.Do(Eval(stmt1), Eval(stmt2));
 
