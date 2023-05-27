@@ -14,6 +14,7 @@ namespace parser
         private readonly string OF_LITERAL = @"([0-9]|\.)"; //characters in literals (does not check if a literal is wf)
         private readonly Regex LITERAL = new Regex(@"(([1-9][0-9]*)|0)(\.(([0-9]*[1-9]+)|0))*");
         private readonly int OP_NOT_FOUND = -1;
+        private readonly int ASCII_ZERO = '0';
 
         // table for our operators
         private readonly Dictionary<char, IOperator> opLookup;
@@ -62,6 +63,20 @@ namespace parser
             if(bracketDepth != 0)
             {
                 throw new Exception("Expression appears to contain orphaned brackets, please ensure your expression is well-formed.");
+            }
+            
+            for(int i = 1; i < noWhiteSpace.Length; i++)
+            {
+                string cc = "" + noWhiteSpace[i - 1] + noWhiteSpace[i];
+                if((cc[1] == '-' || cc[1] == '+') && ((int) cc[0] < ASCII_ZERO || (int) cc[0] > ASCII_ZERO + 9))
+                {
+                    noWhiteSpace = noWhiteSpace.Insert(i, "0");
+                    i++; //our string is longer so we need to keep i relative to this 
+                }
+            }
+            if(noWhiteSpace[0] == '-' || noWhiteSpace[0] == '+')
+            {
+                noWhiteSpace = noWhiteSpace.Insert(0, "0");
             }
 
             Program.WriteLine("preprocessed: " + noWhiteSpace);
