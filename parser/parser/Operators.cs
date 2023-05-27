@@ -8,10 +8,13 @@ namespace parser
 {
     class Operators
     {
+        public static int MAX_OP_STRENGTH = 10;
+
         public class Add : IOperator
         {
             public Add() { }
             public char Symbol() { return '+';  }
+            public int Strength() { return 1;  }
             public double Do(double a, double b) { return a + b; }
         }
 
@@ -19,6 +22,7 @@ namespace parser
         {
             public Sub() { }
             public char Symbol() { return '-'; }
+            public int Strength() { return 1; }
             public double Do(double a, double b) { return a - b; }
         }
 
@@ -26,6 +30,7 @@ namespace parser
         {
             public Mul() { }
             public char Symbol() { return '*'; }
+            public int Strength() { return 2; }
             public double Do(double a, double b) { return a * b; }
         }
 
@@ -33,6 +38,7 @@ namespace parser
         {
             public Div() { }
             public char Symbol() { return '/'; }
+            public int Strength() { return 2; }
             public double Do(double a, double b) { return (double) a / b; }
         }
     }

@@ -9,12 +9,14 @@ namespace parser
 {
     class Parser
     {
-        private readonly string B_OPEN = "(";
-        private readonly string B_CLOSE = ")";
+        private readonly char B_OPEN = '(';
+        private readonly char B_CLOSE = ')';
         private readonly string OF_LITERAL = @"([0-9]|\.)"; //characters in literals (does not check if a literal is wf)
         private readonly Regex LITERAL = new Regex(@"(([1-9][0-9]*)|0)(\.(([0-9]*[1-9]+)|0))*");
+        private readonly int OP_NOT_FOUND = -1;
+
         // table for our operators
-        private readonly Dictionary<char, IOperator> lookup;
+        private readonly Dictionary<char, IOperator> opLookup;
 
         public Parser(List<IOperator> ops)
         {
@@ -25,38 +27,122 @@ namespace parser
                 builder.Add(op.Symbol(), op);
             }
 
-            lookup = builder;
+            opLookup = builder;
         }
 
+        private bool IsValidChar(char c)
+        {
+            return opLookup.ContainsKey(c) || Regex.IsMatch("" + c, OF_LITERAL) || c == B_OPEN || c == B_CLOSE;
+        }
+
+        //removes whitespace, checks characters are all valid, and adds brackets to represent operator binding strength (TODO)
         private string Preprocess(string raw)
         {
             string noWhiteSpace = "";
-            char[] rawChars = raw.ToCharArray();
+            int bracketDepth = 0;
             // remove whitespace and check all characters in our syntax
-            for(int i = 0; i < rawChars.Length; i++)
+            for (int i = 0; i < raw.Length; i++)
             {
-                char c = rawChars[i];
-                Program.WriteLine("" + c);
+                char c = raw[i];                 
+                if (c == B_OPEN)
+                    bracketDepth++;
+                if (c == B_CLOSE)
+                    bracketDepth--;
+
                 if (c != ' ')
                 {
-                    if (!lookup.ContainsKey(c) && !Regex.IsMatch("" + c, OF_LITERAL))
+                    if (!IsValidChar(c))
                     {
-                        throw new Exception("There are illegal characters (besides literals and operators) in the expression.");
+                        throw new Exception("Expression appears to contain illegal character(s) including '"+c+"' in the expression '" + raw + "'.");
                     }
                     noWhiteSpace += c;
                 }
             }
 
+            if(bracketDepth != 0)
+            {
+                throw new Exception("Expression appears to contain orphaned brackets, please ensure your expression is well-formed.");
+            }
+
+            Program.WriteLine("preprocessed: " + noWhiteSpace);
+
             return noWhiteSpace;
+        }
+
+        private int FindWeakOp(string stmt) //if they are all the same we left-associate 
+        {
+            int result = OP_NOT_FOUND;
+            int bracketDepth = 0;
+            int weakest = int.MaxValue;
+            for(int i = 0; i < stmt.Length; i++)
+            {
+                char c = stmt[i];
+                if (c == B_OPEN)
+                    bracketDepth++;
+                if (c == B_CLOSE)
+                    bracketDepth--;
+
+                if (opLookup.ContainsKey(c))
+                {
+                    IOperator op = opLookup[c];
+                    //multiplies binding strength of brackets so they remain together until processed individually 
+                    int s = op.Strength() + (bracketDepth * Operators.MAX_OP_STRENGTH); 
+                    if (s <= weakest)
+                    {
+                        weakest = s;
+                        result = i;
+                    }
+                }
+
+                Program.WriteLine("" + c);
+            }
+
+            return result;
+        }
+
+        private void SplitStmt(string stmt, int n, out string stmt1, out string stmt2)
+        {
+            if(n > stmt.Length || n < 0)
+            {
+                throw new Exception("Cannot split '" + stmt + "' on index '" + n + "'.");
+            }
+            stmt1 = stmt.Remove(n, stmt.Length - n);
+            stmt2 = stmt.Substring(n + 1);
+
+            return;
+        }
+
+        //evaluates statment stmt
+        private double Eval(string stmt)
+        {
+            if (stmt.Length == 0) throw new Exception("Cannot evaluate empty statements");
+
+            int weakOp = FindWeakOp(stmt);
+            if (weakOp == OP_NOT_FOUND)
+            {
+                string literal = LITERAL.Match(stmt).Value;
+                //Program.WriteLine("LITERAL" + literal);
+                double val;
+                bool parseSucceeds = Double.TryParse(literal, out val); //pass-by-ref
+                if (!parseSucceeds) throw new Exception("Cannot evaluate double literal '" + stmt + "' or '" + literal + "', it may be incorrectly formatted.");
+                return val;
+            }
+            
+            string stmt1, stmt2;
+            SplitStmt(stmt, weakOp, out stmt1, out stmt2);
+            IOperator op = opLookup[stmt[weakOp]]; //what we apply to the results of the two statements 
+            Program.WriteLine(stmt);
+            Program.WriteLine("^".PadLeft(weakOp + 1));
+
+            return op.Do(Eval(stmt1), Eval(stmt2));
+
         }
 
         public double Parse(string raw)
         {
             string stmt = Preprocess(raw);
 
-            Program.WriteLine(stmt);
-
-            return 0.0;
+            return Eval(stmt);
         }
     }
 }

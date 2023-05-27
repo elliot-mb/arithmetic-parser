@@ -19,7 +19,7 @@ namespace parser
         {
             if(args.Length != 1)
             {
-                Program.WriteLine("Must take exactly one argument (the expression, wrapped in quotes)");
+                throw new Exception("Must take exactly one argument (the expression, wrapped in quotes)");
             }
 
             Program.WriteLine("args: " + string.Join(",", args));
@@ -32,7 +32,7 @@ namespace parser
 
             Parser p = new Parser(operators);
 
-            p.Parse("0.9 + 1 - 2");
+            Program.WriteLine("out: " + p.Parse(args[0]).ToString());
         }
     }
 }

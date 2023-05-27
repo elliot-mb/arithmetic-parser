@@ -11,7 +11,10 @@ namespace parser
     {
         //aquire the symbol which this operator represents 
         char Symbol();
-        
+
+        //closure presenting their relative binding strength (integer)
+        int Strength();
+
         //complete the operation which this operator represents 
         double Do(double a, double b);
     }
