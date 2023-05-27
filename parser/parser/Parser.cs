@@ -14,8 +14,6 @@ namespace parser
         private readonly string OF_LITERAL = @"([0-9]|\.)"; //characters in literals (does not check if a literal is wf)
         private readonly Regex LITERAL = new Regex(@"(([1-9][0-9]*)|0)(\.(([0-9]*[1-9]+)|0))*");
         private readonly int OP_NOT_FOUND = -1;
-        private readonly int SUB_STMT_NOT_FOUND = -1;
-        private readonly int B_WRAPPED = 2; //the amount of extra characters in '(stmt)' versus 'stmt'
 
         // table for our operators
         private readonly Dictionary<char, IOperator> opLookup;
@@ -41,62 +39,6 @@ namespace parser
         private string Preprocess(string raw)
         {
             string noWhiteSpace = "";
-
-            /*
-            string bracketed = raw;
-
-            //for adding binding strength brackets
-            int bracketTally = 0; //<=> we need to close brackets before the end of the expression 
-            int bracketDepth = 0; //the CURRENT depth of nesting in the original statement (contributes directly to binding strength)
-            int lastOp = OP_NOT_FOUND;
-            int lastStrength = 0;
-            int inserts = 0;
-            for (int i = 0; i < raw.Length; i++)
-            {
-                char c = raw[i];
-                if (c == B_OPEN)
-                    bracketDepth++;
-                if (c == B_CLOSE)
-                    bracketDepth--;
-
-                if (opLookup.ContainsKey(c))
-                {
-                    IOperator op = opLookup[c];
-                    int currentStrength = op.Strength() + (bracketDepth * Operators.MAX_OP_STRENGTH);
-
-                    if (lastOp != OP_NOT_FOUND)
-                    {
-                        IOperator prevOp = opLookup[raw[lastOp]];
- 
-                        if (currentStrength > lastStrength)
-                        {
-                            bracketed = bracketed.Insert(lastOp + 1 + inserts, "" + B_OPEN);
-                            bracketTally++;
-                            inserts++;
-                        }
-                        else if(currentStrength < lastStrength)
-                        {
-                            bracketed = bracketed.Insert(i + inserts, "" + B_CLOSE);
-                            bracketTally--;
-                            inserts++;
-                        }
-                    }
-
-                    lastOp = i;
-                    lastStrength = currentStrength;
-                    //Program.WriteLine("depth:" + bracketDepth + ";" +lastOp.ToString() + ";" + bracketed);
-                }
-            }
-            //to close of all remaining open-brackets
-            for(int i = 0; i < bracketTally; i++)
-                bracketed += B_CLOSE;
-
-            //to open any excess closing brackets 
-            for (int i = 0; i < -bracketTally; i++)
-                bracketed = B_OPEN + bracketed;
-
-            bracketed = B_OPEN + bracketed + B_CLOSE;
-            */
             // remove whitespace and check all characters in our syntax
             for(int i = 0; i < raw.Length; i++)
             {
@@ -129,12 +71,12 @@ namespace parser
                 if (c == B_CLOSE)
                     bracketDepth--;
 
-                //Program.WriteLine(j + "" + stmt);
                 if (opLookup.ContainsKey(c))
                 {
                     IOperator op = opLookup[c];
-                    int s = op.Strength() + (bracketDepth * Operators.MAX_OP_STRENGTH);
-                    if (s < weakest)
+                    //multiplies binding strength of brackets so they remain together until processed individually 
+                    int s = op.Strength() + (bracketDepth * Operators.MAX_OP_STRENGTH); 
+                    if (s <= weakest)
                     {
                         weakest = s;
                         result = i;
@@ -160,7 +102,6 @@ namespace parser
         //evaluates statment stmt
         private double Eval(string stmt)
         {
-            Program.WriteLine("stmt: "+stmt);
             if (stmt.Length == 0) throw new Exception("Cannot evaluate empty statements");
 
             int weakOp = FindWeakOp(stmt);
@@ -177,51 +118,18 @@ namespace parser
             string stmt1, stmt2;
             SplitStmt(stmt, weakOp, out stmt1, out stmt2);
             IOperator op = opLookup[stmt[weakOp]]; //what we apply to the results of the two statements 
-            Program.WriteLine("split: " + stmt1 + "; " + stmt2);
+            Program.WriteLine("stmt : " + stmt);
+            Program.WriteLine("split: " + "^".PadLeft(weakOp + 1));
 
-            //left-associate statements (there are no brackets)
-            return op.Do(Eval(stmt2), Eval(stmt1));
+            return op.Do(Eval(stmt1), Eval(stmt2));
 
-        }
-
-        private string ReverseStmt(string stmt)
-        {
-            string r = ""; //plain reversed statement 
-            for(int i = stmt.Length - 1; i >= 0; i--)
-            {
-                if (stmt[i] == B_OPEN) r += B_CLOSE;
-                if (stmt[i] == B_CLOSE) r += B_OPEN;
-                if(stmt[i] != B_OPEN && stmt[i] != B_CLOSE) r += stmt[i];
-            }
-
-            char[] rr = r.ToCharArray(); //statement with literals re-reversed 
-            MatchCollection literals = LITERAL.Matches(r);
-
-            //Program.WriteLine(r);
-
-            for(int i = 0; i < literals.Count; i++)
-            {
-                Match l = literals[i];
-
-                //Program.WriteLine("MATCH" + l.Value);
-                int index = l.Index;
-                int len = l.Length;
-                for (int j = 0; j < len; j++)
-                {
-                    rr[j + index] = r[len - 1 - j + index];
-                }
-            }
-
-            return new string(rr);
         }
 
         public double Parse(string raw)
         {
             string stmt = Preprocess(raw);
-            string stmtReversed = ReverseStmt(stmt);  //promotes left associativity in this way of processing it 
-            //Program.WriteLine(stmtReversed);
 
-            return Eval(stmtReversed);
+            return Eval(stmt);
         }
     }
 }
