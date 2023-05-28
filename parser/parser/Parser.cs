@@ -167,7 +167,6 @@ namespace parser
             if (weakOp == OP_NOT_FOUND)
             {
                 string literal = LITERAL.Match(stmt).Value;
-                //Program.WriteLine("LITERAL" + literal);
                 double val;
                 bool parseSucceeds = Double.TryParse(literal, out val); //pass-by-ref
                 if (!parseSucceeds) throw new Exception("Cannot evaluate double literal '" + stmt + "' or '" + literal + "', it may be incorrectly formatted.");
@@ -188,8 +187,6 @@ namespace parser
         {
             Preprocessor p = new Preprocessor(opLookup);
             Program.WriteLine(p.ToStatement(p.Clean(raw, opLookup)).ToString());
-
-            Program.WriteLine("//////////////////////////");
 
             string stmt = Preprocess(raw);
 

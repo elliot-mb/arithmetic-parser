@@ -174,7 +174,7 @@ namespace parser
                                 sign = AbstractStatement.NEGATIVE;
                         }
                         //ELSE IF it appears before Nothing (case that there is a leading negative) 
-                        else if (IsSub(op)) 
+                        else if (IsSub(op) && content.Length != 2) 
                         {
                             //a plus in this context does nothing, so we only act on a negative
                             sign = AbstractStatement.NEGATIVE;
@@ -207,9 +207,6 @@ namespace parser
         public Statement ToStatement(string cleaned)
         {
             List<string> tokens = Destructure(cleaned);
-
-            //Program.WriteLine(string.Join(", ", tokens));
-            //Program.WriteLine(Consume(tokens, 0, out int _).ToString());
 
             return Consume(tokens, 0, out int _);
         }
