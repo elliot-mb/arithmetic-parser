@@ -47,7 +47,6 @@ namespace parser
             public Pow() { }
             public char Symbol() { return '^'; }
             public int Strength() { return 3; }
-
             public double Do(double a, double b) { return Math.Pow(a, b);  }
         }
     }

@@ -186,6 +186,11 @@ namespace parser
 
         public double Parse(string raw)
         {
+            Preprocessor p = new Preprocessor(opLookup);
+            Program.WriteLine(p.ToStatement(p.Clean(raw, opLookup)).ToString());
+
+            Program.WriteLine("//////////////////////////");
+
             string stmt = Preprocess(raw);
 
             return Eval(stmt);

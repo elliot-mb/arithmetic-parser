@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace parser
 {
-    interface TokenVisitor
+    interface IStatementVisitor
     {
-        void Accept(Token t);
+        void Visit(AbstractStatement stmt); 
     }
 }
