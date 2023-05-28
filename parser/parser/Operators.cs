@@ -41,5 +41,14 @@ namespace parser
             public int Strength() { return 2; }
             public double Do(double a, double b) { return (double) a / b; }
         }
+
+        public class Pow : IOperator
+        {
+            public Pow() { }
+            public char Symbol() { return '^'; }
+            public int Strength() { return 3; }
+
+            public double Do(double a, double b) { return Math.Pow(a, b);  }
+        }
     }
 }
