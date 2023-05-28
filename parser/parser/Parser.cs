@@ -13,8 +13,14 @@ namespace parser
         private readonly char B_CLOSE = ')';
         private readonly string OF_LITERAL = @"([0-9]|\.)"; //characters in literals (does not check if a literal is wf)
         private readonly Regex LITERAL = new Regex(@"(([1-9][0-9]*)|0)(\.(([0-9]*[1-9]+)|0))*");
+        private readonly Regex LITERAL_PART = new Regex(@"[0-9]|\."); //for a single char of a literal
         private readonly int OP_NOT_FOUND = -1;
-        private readonly int ASCII_ZERO = '0';
+        private enum Segment{
+            None,
+            Literal,
+            Operator,
+            Bracket
+        };
 
         // table for our operators
         private readonly Dictionary<char, IOperator> opLookup;
@@ -64,22 +70,49 @@ namespace parser
             {
                 throw new Exception("Expression appears to contain orphaned brackets, please ensure your expression is well-formed.");
             }
-            
-            for(int i = 1; i < noWhiteSpace.Length; i++)
+
+            //split the input into in-order literals and operator streaks for more granular processing 
+            List<string> destructured = new List<string>();
+            string currentSegment = "";
+            Segment currentID = Segment.None;
+            for(int i = 0; i < noWhiteSpace.Length; i++)
             {
-                string cc = "" + noWhiteSpace[i - 1] + noWhiteSpace[i];
-                if((cc[1] == '-' || cc[1] == '+') && ((int) cc[0] < ASCII_ZERO || (int) cc[0] > ASCII_ZERO + 9) && (cc[0] != ')'))
+                char c = noWhiteSpace[i];
+                if(LITERAL_PART.IsMatch("" + c)) //is part of a literal
                 {
-                    noWhiteSpace = noWhiteSpace.Insert(i, "0");
-                    i++; //our string is longer so we need to keep i relative to this 
+                    if (currentID != Segment.Literal)
+                    {
+                        destructured.Add(currentSegment);
+                        currentID = Segment.Literal;
+                        currentSegment = "";
+                    }
+                    currentSegment += c;
+                }
+                else if (c == B_OPEN || c == B_CLOSE) // each and every bracket is its own segment 
+                { 
+                    destructured.Add(currentSegment);
+                    currentID = Segment.Bracket;
+                    currentSegment = "";
+                    currentSegment += c;
+                }
+                else //if current character is an operator (or sequence of in the case of negatives etc.)
+                {
+                    if (currentID != Segment.Operator)
+                    {
+                        destructured.Add(currentSegment);
+                        currentID = Segment.Operator; 
+                        currentSegment = "";
+                    }
+                    currentSegment += c;
                 }
             }
-            if(noWhiteSpace[0] == '-' || noWhiteSpace[0] == '+')
-            {
-                noWhiteSpace = noWhiteSpace.Insert(0, "0");
-            }
 
+            if(currentSegment.Length != 0)
+                destructured.Add(currentSegment);
+            destructured.RemoveAt(0);
+            
             Program.WriteLine("preprocessed: " + noWhiteSpace);
+            Program.WriteLine("segmented   : " + string.Join(", ", destructured));
 
             return noWhiteSpace;
         }
