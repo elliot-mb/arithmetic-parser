@@ -145,11 +145,9 @@ namespace parser
             {
                 char type = tkn[0];
                 string content = tkn.Split(TOKEN_T_DELIM)[1];
-                Program.WriteLine(type + ";" + content);
 
                 if(type == TOKEN_T[(int)Token.Literal])
                 {
-                    Program.WriteLine("LITERAL");
                     double val;
                     bool parseSucceeds = Double.TryParse(content, out val);
                     if (!parseSucceeds) throw new Exception("Cannot evaluate double literal '" + content + "', it may be incorrectly formatted.");
@@ -160,7 +158,6 @@ namespace parser
                 }
                 if(type == TOKEN_T[(int)Token.Operator])
                 {
-                    Program.WriteLine("OPERATOR");
                     char op = content[0];
 
                     if (content.Length > 2 || (content.Length == 2 && content[1] != new Operators.Sub().Symbol()))
@@ -186,7 +183,6 @@ namespace parser
                 }
                 if(type == TOKEN_T[(int)Token.Bracket])
                 {
-                    Program.WriteLine("BRACKET");
                     if (content == "" + B_OPEN)
                     {//outPtr is incremented so we move PAST the bracket (ignore it, only using it to distinguish sub-statements)
 
@@ -210,11 +206,9 @@ namespace parser
 
         public Statement ToStatement(string cleaned)
         {
-            List<AbstractStatement> stmts = new List<AbstractStatement>();
-            List<IOperator> ops = new List<IOperator>();
             List<string> tokens = Destructure(cleaned);
 
-            Program.WriteLine(string.Join(", ", tokens));
+            //Program.WriteLine(string.Join(", ", tokens));
             //Program.WriteLine(Consume(tokens, 0, out int _).ToString());
 
             return Consume(tokens, 0, out int _);
