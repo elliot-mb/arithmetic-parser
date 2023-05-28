@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace parser
 {
-    //a binary operator, acting as a "rule", standard ones include '+' (plus), '-' (minus), '*' (multiply) and '/' (divide) 
+    //a binary operator, standard ones include '+' (plus), '-' (minus), '*' (multiply) and '/' (divide) 
     interface IOperator 
     {
         //aquire the symbol which this operator represents 
