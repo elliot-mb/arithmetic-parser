@@ -11,11 +11,14 @@ namespace parser
         public static readonly int POSITIVE = 1;
         public static readonly int NEGATIVE = -1;
 
-        void Accept(IStatementVisitor visitor)
+        abstract public void Accept(IStatementVisitor visitor);
+
+        public bool Equals(AbstractStatement a)
         {
-            visitor.Visit(this);
-            return;
+            EqualsVisitor eqV = new EqualsVisitor(this, a);
+            return eqV.Equals();
         }
+
         abstract public int GetSign();
 
         abstract public override string ToString();

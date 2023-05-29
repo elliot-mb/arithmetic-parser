@@ -210,5 +210,10 @@ namespace parser
 
             return Consume(tokens, 0, out int _);
         }
+
+        public Statement Preprocess(string raw)
+        {
+            return ToStatement(Clean(raw, opLookup));
+        }
     }
 }

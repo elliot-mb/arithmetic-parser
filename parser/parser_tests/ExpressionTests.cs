@@ -10,6 +10,7 @@ namespace parser_tests
         [TestMethod]
         public void TestMethod1()
         {
+            
         }
     }
 }

@@ -8,6 +8,8 @@ namespace parser
 {
     interface IStatementVisitor
     {
-        void Visit(AbstractStatement stmt); 
+        void Visit(Statement stmt);
+
+        void Visit(Literal lit);
     }
 }

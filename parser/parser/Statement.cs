@@ -22,6 +22,11 @@ namespace parser
                 throw new Exception("Tried producing statement '" + this.ToString() + "' which has the wrong number of operators, given it's sub-statements.");
         }
 
+        public override void Accept(IStatementVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
+
         public override int GetSign()
         {
             return sign;

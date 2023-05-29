@@ -17,6 +17,11 @@ namespace parser
             this.sign = sign;
         }
 
+        public override void Accept(IStatementVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
+
         public override int GetSign()
         {
             return sign;
