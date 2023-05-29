@@ -51,9 +51,8 @@ namespace parser
                 for (int i = 0; i < s1Stmts.Count; i++)
                 {
                     EqualsVisitor eqV = new EqualsVisitor(s1Stmts[i], s2Stmts[i]);
-                    eqs.Add(eqV.Equals());
+                    eqs.Add(eqV.Equals()); //all substatements are equal 
                 }
-                Program.WriteLine(string.Join(", ", eqs));
                 return eqs.All(x => x); //lambdas are in this language?? amazing
             }
             return false;
