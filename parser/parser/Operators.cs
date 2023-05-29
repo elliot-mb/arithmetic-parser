@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace parser
 {
-    class Operators
+    public static class Operators
     {
         public static int MAX_OP_STRENGTH = 10;
 

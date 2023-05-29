@@ -2,6 +2,7 @@
 *.sln
 obj/
 bin/
+packages/
 Properties/
 *.config
 *.csproj.user

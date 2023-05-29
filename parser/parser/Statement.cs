@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace parser
 {
-    class Statement : AbstractStatement
+    public class Statement : AbstractStatement
     {
         private readonly List<AbstractStatement> stmts;
         private readonly List<IOperator> ops;
@@ -20,6 +20,11 @@ namespace parser
             //is a statement not well formed? this can be the case where |ops| >= |stmts| (too many binary operations for given quanity of stmts)
             if (ops.Count != stmts.Count - 1)
                 throw new Exception("Tried producing statement '" + this.ToString() + "' which has the wrong number of operators, given it's sub-statements.");
+        }
+
+        public override void Accept(IStatementVisitor visitor)
+        {
+            visitor.Visit(this);
         }
 
         public override int GetSign()

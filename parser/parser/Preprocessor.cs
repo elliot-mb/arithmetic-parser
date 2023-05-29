@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace parser
 {
-    class Preprocessor
+    public class Preprocessor
     {
         private readonly char B_OPEN = '(';
         private readonly char B_CLOSE = ')';
@@ -209,6 +209,11 @@ namespace parser
             List<string> tokens = Destructure(cleaned);
 
             return Consume(tokens, 0, out int _);
+        }
+
+        public Statement Preprocess(string raw)
+        {
+            return ToStatement(Clean(raw, opLookup));
         }
     }
 }

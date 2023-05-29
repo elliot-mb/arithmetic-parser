@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace parser
 {
-    class Literal : AbstractStatement
+    public class Literal : AbstractStatement
     {
         private readonly double val;
         private readonly int sign;
@@ -15,6 +15,11 @@ namespace parser
         {
             this.val = val;
             this.sign = sign;
+        }
+
+        public override void Accept(IStatementVisitor visitor)
+        {
+            visitor.Visit(this);
         }
 
         public override int GetSign()
