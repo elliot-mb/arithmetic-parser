@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace parser
 {
-    abstract class AbstractStatement
+    public abstract class AbstractStatement
     {
         public static readonly int POSITIVE = 1;
         public static readonly int NEGATIVE = -1;

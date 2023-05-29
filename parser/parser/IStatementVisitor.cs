@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace parser
 {
-    interface IStatementVisitor
+    public interface IStatementVisitor
     {
         void Visit(Statement stmt);
 

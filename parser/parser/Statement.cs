@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace parser
 {
-    class Statement : AbstractStatement
+    public class Statement : AbstractStatement
     {
         private readonly List<AbstractStatement> stmts;
         private readonly List<IOperator> ops;

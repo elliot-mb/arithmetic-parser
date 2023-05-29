@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace parser
 {
-    class Literal : AbstractStatement
+    public class Literal : AbstractStatement
     {
         private readonly double val;
         private readonly int sign;

@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 
 namespace parser
 {
-    class Parser
+    public class Parser
     {
         private readonly char B_OPEN = '(';
         private readonly char B_CLOSE = ')';
@@ -189,6 +189,18 @@ namespace parser
             Program.WriteLine(p.Preprocess(raw).ToString());
 
             string stmt = Preprocess(raw);
+
+            //testing equals works
+            string testRaw1 = "-22+(2+2)";
+            string testRaw2 = "-22+(2+2)";
+            Statement stmt1 = p.Preprocess(testRaw1);
+            Statement stmt2 = p.Preprocess(testRaw2);
+            string write = stmt1.ToString() + " is";
+            if (!stmt1.Equals(stmt2))
+                write += "n't";
+            write += " equal to " + stmt2.ToString();
+   
+            Program.WriteLine(write);
 
             return Eval(stmt);
         }
