@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace parser
 {
-    class EqualsVisitor : IStatementVisitor
+    public class EqualsVisitor : IStatementVisitor
     {
         private readonly bool isEqual;
         private readonly AbstractStatement a;
@@ -44,7 +44,7 @@ namespace parser
             {
                 for(int i = 0; i < s1Ops.Count; i++)
                 {
-                    if (s1Ops[i].Symbol() == s2Ops[i].Symbol()) //all operators are identical
+                    if (s1Ops[i].Symbol() != s2Ops[i].Symbol()) //all operators are identical
                         return false;
                 }
                 List<bool> eqs = new List<bool>();
@@ -53,6 +53,7 @@ namespace parser
                     EqualsVisitor eqV = new EqualsVisitor(s1Stmts[i], s2Stmts[i]);
                     eqs.Add(eqV.Equals());
                 }
+                Program.WriteLine(string.Join(", ", eqs));
                 return eqs.All(x => x); //lambdas are in this language?? amazing
             }
             return false;

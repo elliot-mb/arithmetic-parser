@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace parser
 {
     //a binary operator, standard ones include '+' (plus), '-' (minus), '*' (multiply) and '/' (divide) 
-    interface IOperator 
+    public interface IOperator 
     {
         //aquire the symbol which this operator represents 
         char Symbol();
