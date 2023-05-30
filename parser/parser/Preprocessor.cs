@@ -25,9 +25,16 @@ namespace parser
         // table for our operators mapping to functions 
         private readonly Dictionary<char, IOperator> opLookup;
 
-        public Preprocessor(Dictionary<char, IOperator> opLookup)
+        public Preprocessor(List<IOperator> ops)
         {
-            this.opLookup = opLookup;
+            Dictionary<char, IOperator> builder = new Dictionary<char, IOperator>();
+            for (int i = 0; i < ops.Count; i++)
+            {
+                IOperator op = ops[i];
+                builder.Add(op.Symbol(), op);
+            }
+
+            opLookup = builder;
         }
 
 
