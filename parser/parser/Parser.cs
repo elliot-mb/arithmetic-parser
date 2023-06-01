@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 
 namespace parser
 {
-    public class Parser
+    public class Parser : IStatementVisitor
     {
         private readonly char B_OPEN = '(';
         private readonly char B_CLOSE = ')';
@@ -22,78 +22,89 @@ namespace parser
             Bracket
         };
 
-        // table for our operators
         private readonly List<IOperator> ops;
+
+        //visitation return value
+        private double visitorEvalVal;
 
         public Parser(List<IOperator> ops)
         {
             this.ops = ops;
         }
 
-        private int FindWeakOp(string stmt) //if they are all the same we left-associate 
+        private int FindWeakOp(Statement stmt, out IOperator op) //if they are all the same we left-associate 
         {
-            int result = OP_NOT_FOUND;
-            int bracketDepth = 0;
             int weakest = int.MaxValue;
-            for(int i = 0; i < stmt.Length; i++)
+            int index = OP_NOT_FOUND;
+            List<IOperator> ops = stmt.GetOperators();
+            op = ops[0]; //it always gets (re)assigned in the below loop
+            for (int i = 0; i < ops.Count; i++)
             {
-                char c = stmt[i];
-                if (c == B_OPEN)
-                    bracketDepth++;
-                if (c == B_CLOSE)
-                    bracketDepth--;
-                /*
-                if (opLookup.ContainsKey(c))
+                if (weakest >= ops[i].GetStrength())
                 {
-                    IOperator op = opLookup[c];
-                    //multiplies binding strength of brackets so they remain together until processed individually 
-                    int s = op.Strength() + (bracketDepth * Operators.MAX_OP_STRENGTH); 
-                    if (s <= weakest)
-                    {
-                        weakest = s;
-                        result = i;
-                    }
-                }*/
+                    weakest = ops[i].GetStrength();
+                    index = i;
+                    op = ops[i];
+                }
             }
 
-            return result;
+            return index;
         }
 
-        private void SplitStmt(string stmt, int n, out string stmt1, out string stmt2)
+        //split on the nth operator 
+        private void SplitStmt(Statement stmt, int n, out Statement stmt1, out Statement stmt2)
         {
-            if(n > stmt.Length || n < 0)
+            if(n >= stmt.GetLength() - 1 || n < 0)
+            //if n - 1 is equal to stmt.GetLength(), it means it still wants to split on an operator that shouldn't exist
             {
-                throw new Exception("Cannot split '" + stmt + "' on index '" + n + "'.");
+                throw new Exception("Cannot split '" + stmt + "' on the " + n + "th operator.");
             }
-            stmt1 = stmt.Remove(n, stmt.Length - n);
-            stmt2 = stmt.Substring(n + 1);
+            stmt1 = stmt.Head(n);
+            stmt2 = stmt.Tail(n);
 
             return;
         }
 
-        //evaluates statment stmt
-        private double Eval(string stmt)
+        public void Visit(Literal lit)
         {
-            if (stmt.Length == 0) throw new Exception("Cannot evaluate empty statements");
+            visitorEvalVal = Eval(lit);
+            Program.WriteLine("visitation Literal and got " + visitorEvalVal);
+        }
 
-            int weakOp = FindWeakOp(stmt);
-            if (weakOp == OP_NOT_FOUND)
+        public void Visit(Statement stmt)
+        {
+            visitorEvalVal = Eval(stmt) * stmt.GetSign();
+            Program.WriteLine("visitation Statement and got " + visitorEvalVal);
+        }
+
+        private double Eval(Literal lit)
+        {
+            Program.WriteLine(lit + " => " + lit.GetSign() + " * " + lit.GetVal());
+            return lit.GetVal() * lit.GetSign();
+        }
+
+        //evaluates statment stmt
+        private double Eval(Statement stmt)
+        {
+            if (stmt.GetLength() == 1) //it is either a LITERAL or single substatement
             {
-                string literal = LITERAL.Match(stmt).Value;
-                double val;
-                bool parseSucceeds = Double.TryParse(literal, out val); //pass-by-ref
-                if (!parseSucceeds) throw new Exception("Cannot evaluate double literal '" + stmt + "' or '" + literal + "', it may be incorrectly formatted.");
-                return val;
+                AbstractStatement inner = stmt.GetStatements()[0];
+                inner.Accept(this); //sets a global variable with the contents of evaluating the underlying class
+                return visitorEvalVal;
             }
+
+            IOperator op;
+            int weakOp = FindWeakOp(stmt, out op);
             
-            string stmt1, stmt2;
+            Statement stmt1, stmt2;
             SplitStmt(stmt, weakOp, out stmt1, out stmt2);
-            //IOperator op = opLookup[stmt[weakOp]]; //what we apply to the results of the two statements 
-            Program.WriteLine(stmt);
-            Program.WriteLine("^".PadLeft(weakOp + 1));
 
-            return 0.0;//op.Do(Eval(stmt1), Eval(stmt2));
+            Program.WriteLine(stmt + " => " + stmt.GetSign() + " * (" + stmt1 + " " + op.Symbol() + " " + stmt2);
 
+            double result = op.Do(Eval(stmt1), Eval(stmt2));
+
+            Program.WriteLine(stmt.GetSign() + " * (" + stmt1 + " " + op.Symbol() + " " + stmt2 + " = " + result);
+            return result;
         }
 
         public double Parse(string raw)
@@ -102,7 +113,7 @@ namespace parser
             Statement stmt = p.Preprocess(raw);
             Program.WriteLine(stmt.ToString());
 
-            return 0.0;//Eval(stmt);
+            return Eval(stmt);
         }
     }
 }

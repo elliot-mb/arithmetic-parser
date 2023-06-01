@@ -14,7 +14,7 @@ namespace parser
         {
             public Add() { }
             public char Symbol() { return '+';  }
-            public int Strength() { return 1;  }
+            public int GetStrength() { return 1;  }
             public double Do(double a, double b) { return a + b; }
         }
 
@@ -22,7 +22,7 @@ namespace parser
         {
             public Sub() { }
             public char Symbol() { return '-'; }
-            public int Strength() { return 1; }
+            public int GetStrength() { return 1; }
             public double Do(double a, double b) { return a - b; }
         }
 
@@ -30,7 +30,7 @@ namespace parser
         {
             public Mul() { }
             public char Symbol() { return '*'; }
-            public int Strength() { return 2; }
+            public int GetStrength() { return 2; }
             public double Do(double a, double b) { return a * b; }
         }
 
@@ -38,7 +38,7 @@ namespace parser
         {
             public Div() { }
             public char Symbol() { return '/'; }
-            public int Strength() { return 2; }
+            public int GetStrength() { return 2; }
             public double Do(double a, double b) { return (double) a / b; }
         }
 
@@ -46,7 +46,7 @@ namespace parser
         {
             public Pow() { }
             public char Symbol() { return '^'; }
-            public int Strength() { return 3; }
+            public int GetStrength() { return 3; }
             public double Do(double a, double b) { return Math.Pow(a, b);  }
         }
     }
