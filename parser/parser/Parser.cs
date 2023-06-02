@@ -33,8 +33,11 @@ namespace parser
         {
             string builder = "";
             if (sign == -1)
-                builder += "-";
-            builder += "" + left + " " + op.Symbol() + " " + right + " = " + result;
+                builder += "-(";
+            builder += "" + left + " " + op.Symbol() + " " + right;
+            if (sign == -1)
+                builder += ")";
+            builder += " = " + (result * sign);
             return builder;
         }
 
@@ -74,18 +77,15 @@ namespace parser
         public void Visit(Literal lit)
         {
             visitorEvalVal = Eval(lit);
-            //Program.WriteLine("visitation Literal and got " + visitorEvalVal);
         }
 
         public void Visit(Statement stmt)
         {
             visitorEvalVal = Eval(stmt) * stmt.GetSign();
-           // Program.WriteLine("visitation Statement and got " + visitorEvalVal);
         }
 
         private double Eval(Literal lit)
         {
-            //Program.WriteLine(lit + " => " + lit.GetSign() + " * " + lit.GetVal());
             return lit.GetVal() * lit.GetSign();
         }
 
@@ -105,13 +105,13 @@ namespace parser
             Statement stmt1, stmt2;
             SplitStmt(stmt, weakOp, out stmt1, out stmt2);
 
-            //Program.WriteLine(stmt + " => " + stmt.GetSign() + " * (" + stmt1 + " " + op.Symbol() + " " + stmt2);
-
             double left = Eval(stmt1);
             double right = Eval(stmt2); //save these for use in debug/printing
             double result = op.Do(left, right);
 
-            Program.WriteLine(PrettyCalculation(left, right, op, result, stmt.GetSign()));
+            if(debug)
+                Program.WriteLine(PrettyCalculation(left, right, op, result, stmt.GetSign()));
+
             return result;
         }
 
@@ -119,6 +119,7 @@ namespace parser
         {
             Preprocessor p = new Preprocessor(ops);
             Statement stmt = p.Preprocess(raw);
+
             if(debug)
                 Program.WriteLine("preprocess: " + stmt.ToString());
 

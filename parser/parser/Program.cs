@@ -17,9 +17,14 @@ namespace parser
 
         static void Main(string[] args)
         {
-            if(args.Length != 1 && args.Length != 2)
+            bool debug = false;
+            if((args.Length != 1 && args.Length != 2) || (args.Length == 2 && args[1] != "-d"))
             {
                 throw new Exception("Must take at least one argument (the expression, wrapped in quotes), and an optional debug flag '-d'");
+            }
+            if(args.Length == 2)
+            {
+                debug = true;
             }
 
             Program.WriteLine("args: " + string.Join(",", args));
@@ -31,7 +36,7 @@ namespace parser
             operators.Add(new Operators.Div());
             operators.Add(new Operators.Pow());
 
-            Parser p = new Parser(operators);
+            Parser p = new Parser(operators, debug);
 
             Program.WriteLine("out: " + p.Parse(args[0]).ToString());
         }

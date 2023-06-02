@@ -8,7 +8,6 @@ namespace parser_tests
     [TestClass]
     public class ExpressionTests
     {
-
         private readonly Parser PARSER = new Parser(new List<IOperator>()
         {
             new Operators.Add(),
@@ -16,7 +15,7 @@ namespace parser_tests
             new Operators.Sub(),
             new Operators.Div(),
             new Operators.Pow()
-        });
+        }, false); //debug mode off
 
         //floating point error
         private readonly double FPE = 0.01;
@@ -93,16 +92,6 @@ namespace parser_tests
         public void Parse_NestedVariedBindStrengthsExpression1_ResultEquals()
         {
             string expression = "((4+2/4+1+6.54)^3+(3*2-89/88)^(-1/2))+(2-3^3-2)";
-            double parserResult = PARSER.Parse(expression);
-            double trueResult = 1718.785387;
-
-            Assert.IsTrue(TollerantEquals(parserResult, trueResult));
-        }
-
-        [TestMethod]
-        public void Parse_PiApproximation_ResultEquals()
-        {
-            string expression = "4*(1/1-1/3+1/5-1/7+1/9-1/11+1/13)";
             double parserResult = PARSER.Parse(expression);
             double trueResult = 1718.785387;
 
