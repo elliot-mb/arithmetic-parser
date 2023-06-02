@@ -13,7 +13,7 @@ namespace parser
         char Symbol();
 
         //closure presenting their relative binding strength (integer)
-        int Strength();
+        int GetStrength();
 
         //complete the operation which this operator represents 
         double Do(double a, double b);

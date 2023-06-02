@@ -7,13 +7,8 @@ using System.Text.RegularExpressions;
 
 namespace parser
 {
-    public class Parser
+    public class Parser : IStatementVisitor
     {
-        private readonly char B_OPEN = '(';
-        private readonly char B_CLOSE = ')';
-        private readonly string OF_LITERAL = @"([0-9]|\.)"; //characters in literals (does not check if a literal is wf)
-        private readonly Regex LITERAL = new Regex(@"(([1-9][0-9]*)|0)(\.(([0-9]*[1-9]+)|0))*");
-        private readonly Regex LITERAL_PART = new Regex(@"[0-9]|\."); //for a single char of a literal
         private readonly int OP_NOT_FOUND = -1;
         private enum Segment{
             None,
@@ -22,185 +17,111 @@ namespace parser
             Bracket
         };
 
-        // table for our operators
-        private readonly Dictionary<char, IOperator> opLookup;
+        private readonly List<IOperator> ops;
 
-        public Parser(List<IOperator> ops)
+        //visitation return value
+        private double visitorEvalVal;
+        private bool debug;
+
+        public Parser(List<IOperator> ops, bool debug)
         {
-            Dictionary<char, IOperator> builder = new Dictionary<char, IOperator>();
-            for(int i = 0; i < ops.Count; i++)
-            {
-                IOperator op = ops[i];
-                builder.Add(op.Symbol(), op);
-            }
-
-            opLookup = builder;
+            this.ops = ops;
+            this.debug = debug;
         }
 
-        private bool IsValidChar(char c)
+        private string PrettyCalculation(double left, double right, IOperator op, double result, int sign)
         {
-            return opLookup.ContainsKey(c) || Regex.IsMatch("" + c, OF_LITERAL) || c == B_OPEN || c == B_CLOSE;
+            string builder = "";
+            if (sign == -1)
+                builder += "-(";
+            builder += "" + left + " " + op.Symbol() + " " + right;
+            if (sign == -1)
+                builder += ")";
+            builder += " = " + (result * sign);
+            return builder;
         }
 
-        //removes whitespace, checks characters are all valid, and adds brackets to represent operator binding strength (TODO)
-        private string Preprocess(string raw)
+        private int FindWeakOp(Statement stmt, out IOperator op) //if they are all the same we left-associate 
         {
-            string noWhiteSpace = "";
-            int bracketDepth = 0;
-            // remove whitespace and check all characters in our syntax
-            for (int i = 0; i < raw.Length; i++)
-            {
-                char c = raw[i];                 
-                if (c == B_OPEN)
-                    bracketDepth++;
-                if (c == B_CLOSE)
-                    bracketDepth--;
-
-                if (c != ' ')
-                {
-                    if (!IsValidChar(c))
-                    {
-                        throw new Exception("Expression appears to contain illegal character(s) including '"+c+"' in the expression '" + raw + "'.");
-                    }
-                    noWhiteSpace += c;
-                }
-            }
-
-            if(bracketDepth != 0)
-            {
-                throw new Exception("Expression appears to contain orphaned brackets, please ensure your expression is well-formed.");
-            }
-
-            //split the input into in-order literals and operator streaks for more granular processing 
-            List<string> destructured = new List<string>();
-            string currentSegment = "";
-            Segment currentID = Segment.None;
-            for(int i = 0; i < noWhiteSpace.Length; i++)
-            {
-                char c = noWhiteSpace[i];
-                if(LITERAL_PART.IsMatch("" + c)) //is part of a literal
-                {
-                    if (currentID != Segment.Literal)
-                    {
-                        destructured.Add(currentSegment);
-                        currentID = Segment.Literal;
-                        currentSegment = "";
-                    }
-                    currentSegment += c;
-                }
-                else if (c == B_OPEN || c == B_CLOSE) // each and every bracket is its own segment 
-                { 
-                    destructured.Add(currentSegment);
-                    currentID = Segment.Bracket;
-                    currentSegment = "";
-                    currentSegment += c;
-                }
-                else //if current character is an operator (or sequence of in the case of negatives etc.)
-                {
-                    if (currentID != Segment.Operator)
-                    {
-                        destructured.Add(currentSegment);
-                        currentID = Segment.Operator; 
-                        currentSegment = "";
-                    }
-                    currentSegment += c;
-                }
-            }
-
-            if(currentSegment.Length != 0)
-                destructured.Add(currentSegment);
-            destructured.RemoveAt(0);
-            
-            Program.WriteLine("preprocessed: " + noWhiteSpace);
-            Program.WriteLine("segmented   : " + string.Join(", ", destructured));
-
-            return noWhiteSpace;
-        }
-
-        private int FindWeakOp(string stmt) //if they are all the same we left-associate 
-        {
-            int result = OP_NOT_FOUND;
-            int bracketDepth = 0;
             int weakest = int.MaxValue;
-            for(int i = 0; i < stmt.Length; i++)
+            int index = OP_NOT_FOUND;
+            List<IOperator> ops = stmt.GetOperators();
+            op = ops[0]; //it always gets (re)assigned in the below loop
+            for (int i = 0; i < ops.Count; i++)
             {
-                char c = stmt[i];
-                if (c == B_OPEN)
-                    bracketDepth++;
-                if (c == B_CLOSE)
-                    bracketDepth--;
-
-                if (opLookup.ContainsKey(c))
+                if (weakest >= ops[i].GetStrength())
                 {
-                    IOperator op = opLookup[c];
-                    //multiplies binding strength of brackets so they remain together until processed individually 
-                    int s = op.Strength() + (bracketDepth * Operators.MAX_OP_STRENGTH); 
-                    if (s <= weakest)
-                    {
-                        weakest = s;
-                        result = i;
-                    }
+                    weakest = ops[i].GetStrength();
+                    index = i;
+                    op = ops[i];
                 }
             }
 
-            return result;
+            return index;
         }
 
-        private void SplitStmt(string stmt, int n, out string stmt1, out string stmt2)
+        //split on the nth operator 
+        private void SplitStmt(Statement stmt, int n, out Statement stmt1, out Statement stmt2)
         {
-            if(n > stmt.Length || n < 0)
+            if(n >= stmt.GetLength() - 1 || n < 0)
+            //if n - 1 is equal to stmt.GetLength(), it means it still wants to split on an operator that shouldn't exist
             {
-                throw new Exception("Cannot split '" + stmt + "' on index '" + n + "'.");
+                throw new Exception("Cannot split '" + stmt + "' on the " + n + "th operator.");
             }
-            stmt1 = stmt.Remove(n, stmt.Length - n);
-            stmt2 = stmt.Substring(n + 1);
+            stmt1 = stmt.Head(n);
+            stmt2 = stmt.Tail(n);
 
             return;
         }
 
-        //evaluates statment stmt
-        private double Eval(string stmt)
+        public void Visit(Literal lit)
         {
-            if (stmt.Length == 0) throw new Exception("Cannot evaluate empty statements");
+            visitorEvalVal = Eval(lit);
+        }
 
-            int weakOp = FindWeakOp(stmt);
-            if (weakOp == OP_NOT_FOUND)
+        public void Visit(Statement stmt)
+        {
+            visitorEvalVal = Eval(stmt) * stmt.GetSign();
+        }
+
+        private double Eval(Literal lit)
+        {
+            return lit.GetVal() * lit.GetSign();
+        }
+
+        //evaluates statment stmt
+        private double Eval(Statement stmt)
+        {
+            if (stmt.GetLength() == 1) //it is either a LITERAL or single substatement
             {
-                string literal = LITERAL.Match(stmt).Value;
-                double val;
-                bool parseSucceeds = Double.TryParse(literal, out val); //pass-by-ref
-                if (!parseSucceeds) throw new Exception("Cannot evaluate double literal '" + stmt + "' or '" + literal + "', it may be incorrectly formatted.");
-                return val;
+                AbstractStatement inner = stmt.GetStatements()[0];
+                inner.Accept(this); //sets a global variable with the contents of evaluating the underlying class
+                return visitorEvalVal;
             }
+
+            IOperator op;
+            int weakOp = FindWeakOp(stmt, out op);
             
-            string stmt1, stmt2;
+            Statement stmt1, stmt2;
             SplitStmt(stmt, weakOp, out stmt1, out stmt2);
-            IOperator op = opLookup[stmt[weakOp]]; //what we apply to the results of the two statements 
-            Program.WriteLine(stmt);
-            Program.WriteLine("^".PadLeft(weakOp + 1));
 
-            return op.Do(Eval(stmt1), Eval(stmt2));
+            double left = Eval(stmt1);
+            double right = Eval(stmt2); //save these for use in debug/printing
+            double result = op.Do(left, right);
 
+            if(debug)
+                Program.WriteLine(PrettyCalculation(left, right, op, result, stmt.GetSign()));
+
+            return result;
         }
 
         public double Parse(string raw)
         {
-            Preprocessor p = new Preprocessor(opLookup);
-            Program.WriteLine(p.Preprocess(raw).ToString());
+            Preprocessor p = new Preprocessor(ops);
+            Statement stmt = p.Preprocess(raw);
 
-            string stmt = Preprocess(raw);
-
-            //testing equals works
-            string testRaw1 = "-22+(2+2)";
-            string testRaw2 = "-22+(2+2)";
-            Statement stmt1 = p.Preprocess(testRaw1);
-            Statement stmt2 = p.Preprocess(testRaw2);
-            string write = stmt1.ToString() + " is";
-            if (!stmt1.Equals(stmt2))
-                write += "n't";
-            write += " equal to " + stmt2.ToString();
-   
-            Program.WriteLine(write);
+            if(debug)
+                Program.WriteLine("preprocess: " + stmt.ToString());
 
             return Eval(stmt);
         }

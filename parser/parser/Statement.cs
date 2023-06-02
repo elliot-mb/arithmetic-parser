@@ -14,12 +14,13 @@ namespace parser
 
         public Statement(List<AbstractStatement> stmts, List<IOperator> ops, int sign)
         {
-            this.stmts = stmts;
-            this.ops = ops;
-            this.sign = sign;
             //is a statement not well formed? this can be the case where |ops| >= |stmts| (too many binary operations for given quanity of stmts)
             if (ops.Count != stmts.Count - 1)
                 throw new Exception("Tried producing statement '" + this.ToString() + "' which has the wrong number of operators, given it's sub-statements.");
+
+            this.stmts = stmts;
+            this.ops = ops;
+            this.sign = sign;
         }
 
         public override void Accept(IStatementVisitor visitor)
@@ -40,6 +41,34 @@ namespace parser
         public List<AbstractStatement> GetStatements()
         {
             return stmts;
+        }
+
+        //how many statements does this statement contain
+        public int GetLength()
+        {
+            return stmts.Count;
+        }
+
+        //checks if n indexes our operators properly
+        private bool OpInRange(int n)
+        {
+            if (n >= stmts.Count - 1 || n < 0)
+                throw new IndexOutOfRangeException("There is no " + n + "th operator in " + ToString());
+            return true;
+        }
+
+        //gets the substatement which appears before the nth operator
+        public Statement Head(int n)
+        {
+            OpInRange(n);
+            return new Statement(stmts.GetRange(0, n + 1), ops.GetRange(0, n), Literal.POSITIVE);
+        }
+
+        //gets the substatement which appears after the nth operator
+        public Statement Tail(int n)
+        {
+            OpInRange(n);
+            return new Statement(stmts.GetRange(n + 1, stmts.Count - n - 1), ops.GetRange(n + 1, ops.Count - n - 1), Literal.POSITIVE);
         }
 
         override public string ToString()
