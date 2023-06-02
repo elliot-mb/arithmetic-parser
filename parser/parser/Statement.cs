@@ -68,7 +68,7 @@ namespace parser
         public Statement Tail(int n)
         {
             OpInRange(n);
-            return new Statement(stmts.GetRange(n + 1, stmts.Count - n - 1), ops.GetRange(n, ops.Count - n - 1), Literal.POSITIVE);
+            return new Statement(stmts.GetRange(n + 1, stmts.Count - n - 1), ops.GetRange(n + 1, ops.Count - n - 1), Literal.POSITIVE);
         }
 
         override public string ToString()
