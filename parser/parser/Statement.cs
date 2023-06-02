@@ -16,7 +16,7 @@ namespace parser
         {
             //is a statement not well formed? this can be the case where |ops| >= |stmts| (too many binary operations for given quanity of stmts)
             if (ops.Count != stmts.Count - 1)
-                throw new Exception("Tried producing statement '" + this.ToString() + "' which has the wrong number of operators, given it's sub-statements.");
+                throw new Exception("Tried producing a statement which has the wrong number of operators (" + ops.Count + "), given the number of sub-statements " + stmts.Count + ").");
 
             this.stmts = stmts;
             this.ops = ops;
