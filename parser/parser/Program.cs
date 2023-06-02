@@ -17,9 +17,9 @@ namespace parser
 
         static void Main(string[] args)
         {
-            if(args.Length != 1)
+            if(args.Length != 1 && args.Length != 2)
             {
-                throw new Exception("Must take exactly one argument (the expression, wrapped in quotes)");
+                throw new Exception("Must take at least one argument (the expression, wrapped in quotes), and an optional debug flag '-d'");
             }
 
             Program.WriteLine("args: " + string.Join(",", args));

@@ -9,11 +9,6 @@ namespace parser
 {
     public class Parser : IStatementVisitor
     {
-        private readonly char B_OPEN = '(';
-        private readonly char B_CLOSE = ')';
-        private readonly string OF_LITERAL = @"([0-9]|\.)"; //characters in literals (does not check if a literal is wf)
-        private readonly Regex LITERAL = new Regex(@"(([1-9][0-9]*)|0)(\.(([0-9]*[1-9]+)|0))*");
-        private readonly Regex LITERAL_PART = new Regex(@"[0-9]|\."); //for a single char of a literal
         private readonly int OP_NOT_FOUND = -1;
         private enum Segment{
             None,
@@ -26,10 +21,21 @@ namespace parser
 
         //visitation return value
         private double visitorEvalVal;
+        private bool debug;
 
-        public Parser(List<IOperator> ops)
+        public Parser(List<IOperator> ops, bool debug)
         {
             this.ops = ops;
+            this.debug = debug;
+        }
+
+        private string PrettyCalculation(double left, double right, IOperator op, double result, int sign)
+        {
+            string builder = "";
+            if (sign == -1)
+                builder += "-";
+            builder += "" + left + " " + op.Symbol() + " " + right + " = " + result;
+            return builder;
         }
 
         private int FindWeakOp(Statement stmt, out IOperator op) //if they are all the same we left-associate 
@@ -68,18 +74,18 @@ namespace parser
         public void Visit(Literal lit)
         {
             visitorEvalVal = Eval(lit);
-            Program.WriteLine("visitation Literal and got " + visitorEvalVal);
+            //Program.WriteLine("visitation Literal and got " + visitorEvalVal);
         }
 
         public void Visit(Statement stmt)
         {
             visitorEvalVal = Eval(stmt) * stmt.GetSign();
-            Program.WriteLine("visitation Statement and got " + visitorEvalVal);
+           // Program.WriteLine("visitation Statement and got " + visitorEvalVal);
         }
 
         private double Eval(Literal lit)
         {
-            Program.WriteLine(lit + " => " + lit.GetSign() + " * " + lit.GetVal());
+            //Program.WriteLine(lit + " => " + lit.GetSign() + " * " + lit.GetVal());
             return lit.GetVal() * lit.GetSign();
         }
 
@@ -99,11 +105,13 @@ namespace parser
             Statement stmt1, stmt2;
             SplitStmt(stmt, weakOp, out stmt1, out stmt2);
 
-            Program.WriteLine(stmt + " => " + stmt.GetSign() + " * (" + stmt1 + " " + op.Symbol() + " " + stmt2);
+            //Program.WriteLine(stmt + " => " + stmt.GetSign() + " * (" + stmt1 + " " + op.Symbol() + " " + stmt2);
 
-            double result = op.Do(Eval(stmt1), Eval(stmt2));
+            double left = Eval(stmt1);
+            double right = Eval(stmt2); //save these for use in debug/printing
+            double result = op.Do(left, right);
 
-            Program.WriteLine(stmt.GetSign() + " * (" + stmt1 + " " + op.Symbol() + " " + stmt2 + " = " + result);
+            Program.WriteLine(PrettyCalculation(left, right, op, result, stmt.GetSign()));
             return result;
         }
 
@@ -111,7 +119,8 @@ namespace parser
         {
             Preprocessor p = new Preprocessor(ops);
             Statement stmt = p.Preprocess(raw);
-            Program.WriteLine(stmt.ToString());
+            if(debug)
+                Program.WriteLine("preprocess: " + stmt.ToString());
 
             return Eval(stmt);
         }
